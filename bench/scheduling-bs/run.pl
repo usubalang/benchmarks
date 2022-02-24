@@ -23,20 +23,22 @@ use POSIX qw( strftime );
 use Term::ANSIColor;
 use Statistics::Test::WilcoxonRankSum;
 use List::MoreUtils qw( zip_unflatten );
+use Getopt::Long;
 
 my @archs         = qw( std sse avx );
 my $cc            = 'gcc';
-my $header_file   = "$FindBin::Bin/../../arch";
+my $bench_dir     = "$FindBin::Bin/../..";
+my $usuba_dir     = "$bench_dir/../usuba";
+my $header_file   = "$usuba_dir/arch";
 my $cflags        = "-march=native -Os -fno-tree-vectorize -fno-tree-slp-vectorize " .
                     "-Wall -Wextra -Wno-missing-braces -D WARMING=1000 -I $header_file";
 my $bench_nb_run  = 300000;
-my $ua_source_dir = "$FindBin::Bin/../../samples/usuba";
+my $ua_source_dir = "$bench_dir/examples/samples/usuba";
 my $c_source_dir  = "/tmp/ua-bench-sched-bs/C";
 my $bin_dir       = "/tmp/ua-bench-sched-bs/bin";
 my $ua_flags      = '-gen-bench -no-arr -unroll -sched-n 1';
 my $bench_main    = "$FindBin::Bin/../../experimentations/bench_generic/bench.c";
 my $res_file      = "/tmp/ua-bench-sched-bs/results.txt";
-my $ua_dir        = "$FindBin::Bin/../..";
 my %ciphers = (
     'AES-bs'       => [ 'aes.ua',                '-B' ],
     'ACE-bs'       => [ 'ace_bitslice.ua',       '-B' ],
@@ -73,8 +75,15 @@ if ($opts[0] =~ /^(\d+)$/) {
 
 my $make     = 0;
 my $gen      = 0;
-my $compile  = 1;
-my $run      = 1;
+my $compile  = 0;
+my $run      = 0;
+
+GetOptions(
+    "make|m"   => \$make,
+    "gen|g"   => \$gen,
+    "compile|c"   => \$compile,
+    "run|r"   => \$run,
+    ) or die "Error in command line arguments";
 
 sub avg_stdev {
     my $u = sum(@_) / @_; # mean
@@ -84,17 +93,20 @@ sub avg_stdev {
 
 
 if ($make) {
-    chdir $ua_dir;
+    chdir $usuba_dir;
 
     say "-----------------------------------------------------------------------";
     say "------------------------- Recompiling Usuba   -------------------------";
     say "-----------------------------------------------------------------------";
+    die if system 'pwd';
     die if system 'make';
+    chdir $bench_dir;
+    say "ln -sf $usuba_dir/usubac usubac";
+    die if system "ln -sf $usuba_dir/usubac usubac";
     say "\n";
 }
 
 if ($gen) {
-    chdir $ua_dir;
     remove_tree $c_source_dir if -d $c_source_dir;
     make_path $c_source_dir;
 
