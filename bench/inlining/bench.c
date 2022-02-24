@@ -1,1 +1,1 @@
-../../experimentations/bench_generic/bench.c
+../bench.c

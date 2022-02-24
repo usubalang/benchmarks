@@ -69,9 +69,9 @@ collect() if $collect;
 sub make_usubac {
     local $job_str = "Recompiling Usubac";
     status_start;
-    
+
     die "Couldn't make." if system 'make';
-    
+
     status_end;
 }
 
@@ -83,13 +83,13 @@ sub generate {
     my $options_all = '-no-share -no-runtime';
 
     my %conf = (
-        aes       => { src => 'aes_kasper.ua', archs => [qw(sse avx)], 
+        aes       => { src => 'aes_kasper.ua', archs => [qw(sse avx)],
                        dir => 'aes128ctr', opts => ' '  },
-        rectangle => { src => 'rectangle.ua', archs => [qw(sse)], 
+        rectangle => { src => 'rectangle.ua', archs => [qw(sse)],
                        dir => 'rectangle64ctr', opts => ' ' },
-        serpent   => { src => 'serpent.ua', archs => [qw(std sse avx)], 
+        serpent   => { src => 'serpent.ua', archs => [qw(std sse avx)],
                        dir => 'serpent128ctr', opts => '-bits-per-reg 32' },
-        chacha20  => { src => 'chacha20.ua',archs => [qw(std sse avx)],  
+        chacha20  => { src => 'chacha20.ua',archs => [qw(std sse avx)],
                        dir => 'chacha20', opts => '-bits-per-reg 32' });
 
     while (my ($cipher,$cconf) = each %conf) {
@@ -98,9 +98,9 @@ sub generate {
             status(V_LOW_PRIO, "Generating ${cipher}::${arch}...");
 
             my $dst_dir = "supercop/crypto_stream/$cconf->{dir}/usuba-$arch/";
-            
+
             # Compiling the Usuba cipher to C
-            die "Couldn't compile '$cipher -- $arch'" if 
+            die "Couldn't compile '$cipher -- $arch'" if
                 system "./usubac "
                 . "-o $dst_dir/$cipher.c "
                 . "$options_all "
@@ -110,12 +110,12 @@ sub generate {
 
             # Making sure the arch specific header is up-to-date
             copy "arch/" . uc($arch) . ".h", $dst_dir;
-            
+
             status(V_LOW_PRIO, "Generating ${cipher}::${arch}: done.");
         }
         status(V_MED_PRIO, "Generating $cipher: done.");
     }
-    
+
     status_end;
 }
 
@@ -126,11 +126,11 @@ sub run_benchs {
     remove_tree "supercop-data";
     chdir "supercop";
     unlink "supercop-data";
-    
+
     die "Error in supercop benchmark." if system "./data-do";
 
     chdir "..";
-    
+
     local $job_str = "Running Supercop";
     status_end;
 }
@@ -155,7 +155,7 @@ sub collect {
 
     my @refs;
     # Serpent, AES & Chacha Usuba
-    for (['serpent','serpent128ctr', 'clang'], ['aes', 'aes128ctr', 'clang'], 
+    for (['serpent','serpent128ctr', 'clang'], ['aes', 'aes128ctr', 'clang'],
          ['chacha20','chacha20', 'gcc']) {
         my ($file, $cipher, $cc) = @$_;
         for (['std', 'GP\n64-bit'], ['sse', 'AVX'], ['avx', 'AVX2']) {
@@ -188,7 +188,7 @@ sub collect {
                       cc => 'clang', opts => 'march=native',
                       file => 'serpent', name => $name };
     }
-         
+
     # AES K&S and Kivilinna
     for (['kivilinna-avx','Kivilinna\nAVX'],['kasper_sse','K\\\\&S\nAVX']) {
         my ($implem,$name) = @$_;
@@ -232,7 +232,7 @@ sub collect {
     push @refs, { cipher => 'aes128estream', implem => 'e/bernstein/little-4',
                   cc => 'gcc', opts => 'march=native',
                   file => 'aes', name => 'ref' };
-    
+
     # Gathering the results
     my %data;
     for (@refs) {
@@ -248,7 +248,7 @@ sub collect {
         }
         close $FP;
     }
-    
+
     # Printing the speedup data file
     open my $FP, '>', 'supercop/plots/data-speedup.dat';
     printf $FP q{archi      "GP 64-bits"   SSE     AVX      AVX2
@@ -256,7 +256,7 @@ AES              0         1      %.2f     %.2f
 Serpent          1        %.2f    %.2f     %.2f
 Chacha20         1        %.2f    %.2f     %.2f
 DES              1        %.2f    %.2f     %.2f
-}, 
+},
 $perfs{clang}->{'mssse3'}->{"aes128ctr/usuba-sse"} / $perfs{clang}->{'march=native'}->{"aes128ctr/usuba-sse"}, # AES AVX
 $perfs{clang}->{'mssse3'}->{"aes128ctr/usuba-sse"} / $perfs{clang}->{'march=native'}->{"aes128ctr/usuba-avx"}, # AES AVX2
 $perfs{clang}->{'march=native'}->{"serpent128ctr/usuba-std"} / $perfs{clang}->{'mssse3'}->{"serpent128ctr/usuba-sse"}, # Serpent SSE
@@ -277,7 +277,7 @@ $perfs{clang}->{'march=native'}->{"chacha20/usuba-std"} / $perfs{clang}->{'march
 
 sub perf_from_file {
     my $filename = shift;
-    
+
     my $last_line;
     open my $FP, '<', $filename;
 
@@ -295,5 +295,5 @@ sub perf_from_file {
     } else {
         return 0;
     }
-    
+
 }
