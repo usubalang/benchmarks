@@ -49,23 +49,40 @@ my %ciphers_slow = (
     gimli      => 1
     );
 
+# my %ciphers_fast = (
+#     des        => 0,
+#     serpent    => 1,
+#     rectangle  => 1,
+#     aes        => 0,
+#     aes_kasper => 0,
+#     chacha20   => 1,
+#     ascon      => 1,
+#     ace        => 0,
+#     clyde      => 1,
+#     gift       => 0,
+#     pyjamask   => 0,
+#     xoodoo     => 1,
+#     gimli      => 1
+#     );
+
 my %ciphers_fast = (
     des        => 0,
-    serpent    => 1,
-    rectangle  => 1,
+    serpent    => 0,
+    rectangle  => 0,
     aes        => 0,
     aes_kasper => 0,
-    chacha20   => 1,
+    chacha20   => 0,
     ascon      => 1,
     ace        => 0,
-    clyde      => 1,
+    clyde      => 0,
     gift       => 0,
     pyjamask   => 0,
-    xoodoo     => 1,
-    gimli      => 1
+    xoodoo     => 0,
+    gimli      => 0
     );
 
 my $gen     = !@ARGV || "@ARGV" =~ /-g/;
+my $make    = !@ARGV || "@ARGV" =~ /-m/;
 my $compile = !@ARGV || "@ARGV" =~ /-c/;
 my $run     = !@ARGV || "@ARGV" =~ /-r/;
 my $speed   = !@ARGV || "@ARGV" =~ /-s/;
@@ -85,9 +102,22 @@ my @ciphers = grep { $ciphers{$_} } keys %ciphers;
 my $pwd = "$FindBin::Bin";
 
 
+if ($make) {
+    chdir $usuba_dir;
+
+    say "-----------------------------------------------------------------------";
+    say "------------------------- Recompiling Usuba   -------------------------";
+    say "-----------------------------------------------------------------------";
+    die if system 'pwd';
+    die if system 'make';
+    chdir $bench_dir;
+    say "ln -sf $usuba_dir/usubac usubac";
+    die if system "ln -sf $usuba_dir/usubac usubac";
+    say "\n";
+}
+
 if ($gen) {
     print "Compiling Usuba sources...";
-    chdir "$FindBin::Bin/../..";
 
     my $out_dir = "$pwd/generated/ciphers";
     make_path $out_dir unless -d $out_dir;
