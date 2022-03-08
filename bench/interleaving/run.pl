@@ -21,15 +21,19 @@ use File::Path qw( remove_tree make_path );
 use File::Copy;
 use FindBin;
 
+my $bench_dir     = "$FindBin::Bin/../..";
+my $ua_source_dir = "$bench_dir/examples/samples/usuba";
+my $usuba_dir     = "$bench_dir/../usuba";
+my $header_file   = "$usuba_dir/arch";
 
 my $NB_LOOP = 10;
 my $CC      = 'clang';
 my $CFLAGS  = '-Wall -Wextra -O3 -march=native -fno-slp-vectorize -fno-vectorize';
-my $INC     = '-I ../../arch';
+my $INC     = "-I $header_file";
 $| = 1;
 
 
-my %ciphers = (
+my %ciphers_slow = (
     des        => 0,
     serpent    => 1,
     rectangle  => 1,
@@ -44,13 +48,39 @@ my %ciphers = (
     xoodoo     => 1,
     gimli      => 1
     );
-my @ciphers = grep { $ciphers{$_} } keys %ciphers;
 
+my %ciphers_fast = (
+    des        => 0,
+    serpent    => 1,
+    rectangle  => 1,
+    aes        => 0,
+    aes_kasper => 0,
+    chacha20   => 1,
+    ascon      => 1,
+    ace        => 0,
+    clyde      => 1,
+    gift       => 0,
+    pyjamask   => 0,
+    xoodoo     => 1,
+    gimli      => 1
+    );
 
 my $gen     = !@ARGV || "@ARGV" =~ /-g/;
 my $compile = !@ARGV || "@ARGV" =~ /-c/;
 my $run     = !@ARGV || "@ARGV" =~ /-r/;
+my $speed   = !@ARGV || "@ARGV" =~ /-s/;
 
+my %ciphers;
+
+if ($speed) {
+    say "benchmarking only fast ciphers";
+    %ciphers = %ciphers_fast;
+} else {
+    say "benchmarking almost all ciphers (slower)";
+    %ciphers = %ciphers_slow
+};
+
+my @ciphers = grep { $ciphers{$_} } keys %ciphers;
 
 my $pwd = "$FindBin::Bin";
 
@@ -65,7 +95,7 @@ if ($gen) {
     my $ua_args = "-V -arch std -gen-bench";
 
     for my $cipher (@ciphers) {
-        my $source  = "samples/usuba/$cipher.ua";
+        my $source  = "$ua_source_dir/$cipher.ua";
         system "./usubac $ua_args                -o $out_dir/${cipher}.c       $source";
         system "./usubac $ua_args -interleave 10 -o $out_dir/${cipher}-inter.c $source";
     }
@@ -81,7 +111,6 @@ if ($compile) {
     make_path $out_dir unless -d $out_dir;
 
     my $cipher_dir = "$pwd/generated/ciphers";
-
     for my $cipher (@ciphers) {
         system "$CC $CFLAGS $INC bench.c $cipher_dir/$cipher.c       -o $out_dir/$cipher";
         system "$CC $CFLAGS $INC bench.c $cipher_dir/$cipher-inter.c -o $out_dir/$cipher-inter";
@@ -117,7 +146,7 @@ for my $cipher (@ciphers) {
     for my $bin (sort { $res{$a}->{total} <=> $res{$b}->{total} } keys %res) {
         my $size = -s $bin;
         my $name = $bin =~ s{$bin_dir/}{}r;
-        printf "%13s : %03.02f  [ %s ]  {$size bytes}\n", $name, $res{$bin}->{total} / $NB_LOOP,
+        printf "%20s : %03.02f  [ %s ]  {$size bytes}\n", $name, $res{$bin}->{total} / $NB_LOOP,
             (join ", ", @{$res{$bin}->{details}});
         printf $FP_OUT "%s %.02f $size\n", $name, $res{$bin}->{total} / $NB_LOOP;
     }
