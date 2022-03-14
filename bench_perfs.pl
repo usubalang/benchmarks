@@ -26,14 +26,22 @@ use POSIX qw( strftime );
 use Term::ANSIColor;
 use Statistics::Test::WilcoxonRankSum;
 
+# directories
+my $work_dir = '/tmp/usuba_perfs';
+my $bench_dir     = "$FindBin::Bin";
+say $bench_dir;
+my $usuba_dir     = "$bench_dir/../usuba";
+my $header_file   = "$usuba_dir/arch";
+my $ua_source_dir = "$bench_dir/examples/samples/usuba";
+
+# files
+my $bench_main    = "$bench_dir/bench/bench.c";
+
+# flags
 my $cc = 'clang';
-my $header_file = "$FindBin::Bin/arch";
 my $cflags = "-march=native -O3 -fno-tree-vectorize -fno-slp-vectorize -Wall -Wextra -Wno-missing-braces -D WARMING=1000 -I $header_file";
 my $bench_nb_run = 300000;
-my $work_dir = '/tmp/usuba_perfs';
-my $ua_source_dir = "$FindBin::Bin/samples/usuba";
 my $ua_flags = '-gen-bench -arch avx -unroll -inline-all';
-my $bench_main = "$FindBin::Bin/experimentations/bench_generic/bench.c";
 my $res_dir = "$FindBin::Bin/perf_bench_res";
 my $ref_files_dir = "$FindBin::Bin/perf_ref_files";
 my $ref_file = "$FindBin::Bin/perfs.json";
@@ -85,11 +93,13 @@ my $compile = 1; # Compile .c ciphers
 my $run     = 1; # Run benchmark
 my $set_ref = 0; # Set new reference
 
-GetOptions( "make"    => \$make,
-            "gen"     => \$gen,
-            "compile" => \$compile,
-            "run"     => \$run,
-            "set-ref" => \$set_ref);
+GetOptions(
+    "make|m"   => \$make,
+    "gen|g"   => \$gen,
+    "compile|c"   => \$compile,
+    "run|r"   => \$run,
+    "set-ref|s" => \$set_ref
+    ) or die "Error in command line arguments";
 
 if ($set_ref) {
     $make    = 1;
@@ -114,17 +124,19 @@ sub avg_stdev {
 }
 
 sub make {
-    chdir $FindBin::Bin;
+    chdir $usuba_dir;
 
     say "-----------------------------------------------------------------------";
     say "------------------------- Recompiling Usuba   -------------------------";
     say "-----------------------------------------------------------------------";
     die if system 'make';
+    chdir $bench_dir;
+    die if system "ln -sf $usuba_dir/usubac usubac";
     say "\n";
 }
 
 sub gen {
-    chdir $FindBin::Bin;
+    chdir $bench_dir;
     remove_tree $work_dir if -d $work_dir;
     make_path $work_dir;
 

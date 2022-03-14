@@ -109,6 +109,7 @@ if ($make) {
     say "------------------------- Recompiling Usuba   -------------------------";
     say "-----------------------------------------------------------------------";
     die if system 'pwd';
+    die if system 'eval $(opam env)';
     die if system 'make';
     chdir $bench_dir;
     say "ln -sf $usuba_dir/usubac usubac";
