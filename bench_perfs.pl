@@ -15,6 +15,17 @@ This scripts runs the performance benchmarks. It saves the results in a .json fi
 
 To add a new ciphers, modify the %ciphers hash.
 
+TODO: running the benchmarks is not multi-thread. There is a bug in
+Statistics::Test::WilcoxonRankSum preventing the use of the "threads"
+core module. As a result, I'm using Parallel::ForkManager, and sharing
+data structures is a bit more tedious. Still, doable, cf the doc.
+
+TODO: computing statistics (with Statistics::Test::WilcoxonRankSum)
+can take a bit of time, and is not currently multi-threaded, because
+this is done while printing. To save time, there should be a first
+(multithreaded) loop that computes the statistics, and finally a
+simple function that prints the results.
+
 =cut
 
 use strict;
@@ -34,11 +45,12 @@ use JSON;
 use POSIX qw( strftime );
 use Term::ANSIColor;
 use Statistics::Test::WilcoxonRankSum;
+use Parallel::ForkManager;
+
 
 # directories
 my $work_dir = '/tmp/usuba_perfs';
 my $bench_dir     = "$FindBin::Bin";
-say $bench_dir;
 my $usuba_dir     = "$bench_dir/../usuba";
 my $header_file   = "$usuba_dir/arch";
 my $ua_source_dir = "$bench_dir/examples/samples/usuba";
@@ -102,14 +114,16 @@ my $compile = 1; # Compile .c ciphers
 my $run     = 1; # Run benchmark
 my $set_ref = 0; # Set new reference
 my $quick   = 0; # Do a quick run
+my $thread_count = 4; # Number of parallel threads
 
 GetOptions(
-    "make|m"   => \$make,
-    "gen|g"   => \$gen,
-    "compile|c"   => \$compile,
-    "run|r"   => \$run,
-    "set-ref|s" => \$set_ref,
-    "quick|q" => \$quick
+    "make|m!"         => \$make,
+    "gen|g!"          => \$gen,
+    "compile|c!"      => \$compile,
+    "run|r!"          => \$run,
+    "set-ref|s!"      => \$set_ref,
+    "quick|q!"        => \$quick,
+    "thread-count|j=i" => \$thread_count
     ) or die "Error in command line arguments";
 
 if ($set_ref) {
@@ -134,14 +148,13 @@ if ($quick) {
         );
 }
 
+my $pm = Parallel::ForkManager->new($thread_count);
+
 make()    if $make;
 gen()     if $gen;
 compile() if $compile;
 run()     if $run;
 set_ref() if $set_ref;
-
-
-
 
 sub avg_stdev {
     my $u = sum(@_) / @_; # mean
@@ -170,10 +183,13 @@ sub gen {
     say "-------------------- Compiling from Usuba to C ------------------------";
     say "-----------------------------------------------------------------------";
     for my $cipher (sort keys %ciphers) {
-        say "\t- $cipher....";
+        #say "\t- $cipher....";
+        $pm->start and next;
         my ($ua_file, @opts) = @{$ciphers{$cipher}};
         system "./usubac $ua_flags -o $work_dir/$cipher.c @opts $ua_source_dir/$ua_file";
+        $pm->finish;
     }
+    $pm->wait_all_children;
     say "\n";
 }
 
@@ -191,13 +207,17 @@ sub compile {
         say "----------------------- Compiling $name C files -------------------------";
         say "-----------------------------------------------------------------------";
         for my $cipher (sort keys %ciphers) {
-            say "\t- $cipher....";
+            #say "\t- $cipher....";
+            $pm->start and next;
             my $this_nb_run = (grep { $_ eq '-B' } @{$ciphers{$cipher}}) ?
                 $bench_nb_run / 20 : $bench_nb_run;
             if (-f "$dir/$cipher.c") {
                 system "$cc $cflags -D NB_RUN=$this_nb_run $bench_main $dir/$cipher.c -o $dir/$cipher";
+                print "$dir/$cipher";
             }
+            $pm->finish;
         }
+        $pm->wait_all_children;
         say "\n";
     }
 }
