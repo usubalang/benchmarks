@@ -101,13 +101,15 @@ my $gen     = 1; # Compile .ua ciphers
 my $compile = 1; # Compile .c ciphers
 my $run     = 1; # Run benchmark
 my $set_ref = 0; # Set new reference
+my $quick   = 0; # Do a quick run
 
 GetOptions(
     "make|m"   => \$make,
     "gen|g"   => \$gen,
     "compile|c"   => \$compile,
     "run|r"   => \$run,
-    "set-ref|s" => \$set_ref
+    "set-ref|s" => \$set_ref,
+    "quick|q" => \$quick
     ) or die "Error in command line arguments";
 
 if ($set_ref) {
@@ -115,6 +117,21 @@ if ($set_ref) {
     $gen     = 1;
     $compile = 0;
     $run     = 0;
+    $quick   = 0;
+}
+
+if ($quick) {
+  #  Benchmark only core set of algorithms
+    %ciphers = (
+        'AES-bs'              => [ 'aes.ua',                '-B' ],
+        'AES-hs'              => [ 'aes_mslice.ua',         '-H' ],
+        'AES-vs'              => [ 'aes_generic.ua',        '-V' ],
+        'ACE-vs-inter'        => [ 'ace.ua',                '-V', '-interleave 2' ],
+        'Ascon-vs-inter'      => [ 'ascon.ua',              '-V', '-interleave 2' ],
+        'Gimli-bs'            => [ 'gimli_bitslice.ua',     '-B -unroll -inline-all' ],
+        'Photon-bs'           => [ 'photon_bitslice.ua',    '-B', '-no-sched' ],
+        'Rectangle-hs-inter'  => [ 'rectangle.ua',          '-H', '-interleave 2' ]
+        );
 }
 
 make()    if $make;
