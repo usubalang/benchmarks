@@ -1,5 +1,8 @@
 #!/usr/bin/perl
 
+# Darius (23/3/2022):
+#   run_benchs.pl, ca bench quelques algos dans supercop. C'est probablement pas le script le plus up-to-date. Jpense qu'il a servit un peu pour le PLDI.
+
 use strict;
 use warnings;
 use v5.14;

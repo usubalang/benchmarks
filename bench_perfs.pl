@@ -1,5 +1,14 @@
 #!/usr/bin/perl
 
+# Darius (23/3/2022):
+
+# bench_perfs.pl c'était le script de benchs de non-regression, et ca benchmark à peu près tous nos algo, Usuba vs Usuba (prévu pour être lancé après un commit par exemple). La manière dont ca marche:
+
+# $ref_files_dir contient le code C généré par la version Usuba de référence
+# le script génère le code C pour pas mal de code Usuba, puis les compile, compile les fichiers de référence, et compare les perfs.
+# Pour set la version de référence à la version courante, faut appeler le script avec le flag --set-ref (ou juste -s)).
+
+
 =head
 
 This scripts runs the performance benchmarks. It saves the results in a .json file.
