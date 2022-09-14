@@ -47,11 +47,29 @@ use Term::ANSIColor;
 use Statistics::Test::WilcoxonRankSum;
 use Parallel::ForkManager;
 
+my $bench_dir     = "$FindBin::Bin";
+my $usuba_dir     = "$bench_dir/../usuba";
+my $make    = 1; # Re-compile Usuba
+my $gen     = 1; # Compile .ua ciphers
+my $compile = 1; # Compile .c ciphers
+my $run     = 1; # Run benchmark
+my $set_ref = 0; # Set new reference
+my $quick   = 0; # Do a quick run
+my $thread_count = 4; # Number of parallel threads
+
+GetOptions(
+    "dir=s"          => \$usuba_dir,
+    "make|m!"         => \$make,
+    "gen|g!"          => \$gen,
+    "compile|c!"      => \$compile,
+    "run|r!"          => \$run,
+    "set-ref|s!"      => \$set_ref,
+    "quick|q!"        => \$quick,
+    "thread-count|j=i" => \$thread_count
+    ) or die "Error in command line arguments";
 
 # directories
 my $work_dir = '/tmp/usuba_perfs';
-my $bench_dir     = "$FindBin::Bin";
-my $usuba_dir     = "$bench_dir/../usuba";
 my $header_file   = "$usuba_dir/arch";
 my $ua_source_dir = "$bench_dir/examples/samples/usuba";
 
@@ -108,24 +126,6 @@ my %ciphers = (
 my $nb_run = 35;
 
 
-my $make    = 1; # Re-compile Usuba
-my $gen     = 1; # Compile .ua ciphers
-my $compile = 1; # Compile .c ciphers
-my $run     = 1; # Run benchmark
-my $set_ref = 0; # Set new reference
-my $quick   = 0; # Do a quick run
-my $thread_count = 4; # Number of parallel threads
-
-GetOptions(
-    "make|m!"         => \$make,
-    "gen|g!"          => \$gen,
-    "compile|c!"      => \$compile,
-    "run|r!"          => \$run,
-    "set-ref|s!"      => \$set_ref,
-    "quick|q!"        => \$quick,
-    "thread-count|j=i" => \$thread_count
-    ) or die "Error in command line arguments";
-
 if ($set_ref) {
     $make    = 1;
     $gen     = 1;
@@ -168,7 +168,8 @@ sub make {
     say "-----------------------------------------------------------------------";
     say "------------------------- Recompiling Usuba   -------------------------";
     say "-----------------------------------------------------------------------";
-    die if system 'make';
+    die if system './configure --datadir $bench_dir/examples/data --tightprove ""';
+    die if system 'eval $(opam env) && make';
     chdir $bench_dir;
     die if system "ln -sf $usuba_dir/usubac usubac";
     say "\n";
