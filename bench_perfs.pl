@@ -49,6 +49,7 @@ use Parallel::ForkManager;
 
 my $bench_dir     = "$FindBin::Bin";
 my $usuba_dir     = "$bench_dir/../usuba";
+
 my $make    = 1; # Re-compile Usuba
 my $gen     = 1; # Compile .ua ciphers
 my $compile = 1; # Compile .c ciphers
@@ -168,7 +169,7 @@ sub make {
     say "-----------------------------------------------------------------------";
     say "------------------------- Recompiling Usuba   -------------------------";
     say "-----------------------------------------------------------------------";
-    die if system './configure --datadir $bench_dir/examples/data --tightprove ""';
+    die if system "./configure --datadir $bench_dir/examples/data --nodeps --tightprove \"\"";
     die if system 'eval $(opam env) && make';
     chdir $bench_dir;
     die if system "ln -sf $usuba_dir/usubac usubac";
