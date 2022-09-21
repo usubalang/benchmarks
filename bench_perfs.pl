@@ -55,7 +55,6 @@ my $gen     = 1; # Compile .ua ciphers
 my $compile = 1; # Compile .c ciphers
 my $run     = 1; # Run benchmark
 my $set_ref = 0; # Set new reference
-my $quick   = 0; # Do a quick run
 my $thread_count = 4; # Number of parallel threads
 
 GetOptions(
@@ -65,7 +64,6 @@ GetOptions(
     "compile|c!"      => \$compile,
     "run|r!"          => \$run,
     "set-ref|s!"      => \$set_ref,
-    "quick|q!"        => \$quick,
     "thread-count|j=i" => \$thread_count
     ) or die "Error in command line arguments";
 
@@ -86,43 +84,14 @@ my $res_dir = "$FindBin::Bin/perf_bench_res";
 my $ref_files_dir = "$FindBin::Bin/perf_ref_files";
 my $ref_file = "$FindBin::Bin/perfs.json";
 my %ciphers = (
-    # 'AES-bs'       => { archs   => [ 'std', 'avx' ],
-    #                     source  => 'aes.ua',
-    #                     ua_opts => '-B' },
-    'AES-bs'              => [ 'aes.ua',                '-B' ],
-    'AES-hs'              => [ 'aes_mslice.ua',         '-H' ],
-    'AES-vs'              => [ 'aes_generic.ua',        '-V' ],
-    'ACE-vs-inter'        => [ 'ace.ua',                '-V', '-interleave 2' ],
-    'ACE-vs'              => [ 'ace.ua',                '-V' ],
-    'ACE-bs'              => [ 'ace_bitslice.ua',       '-B' ],
-    'Ascon-vs-inter'      => [ 'ascon.ua',              '-V', '-interleave 2' ],
-    'Ascon-vs'            => [ 'ascon.ua',              '-V' ],
-    'Ascon-bs'            => [ 'ascon.ua',              '-B' ],
-    'Clyde-vs-inter'      => [ 'clyde.ua',              '-V', '-interleave 2' ],
-    'Clyde-vs'            => [ 'clyde.ua',              '-V' ],
-    'Clyde-bs'            => [ 'clyde_bitslice.ua',     '-B' ],
-    'DES'                 => [ 'des.ua',                '-B' ],
-    'Chacha20'            => [ 'chacha20.ua',           '-V' ],
-    'Gift-vs'             => [ 'gift.ua',               '-V' ],
-    'Gift-bs'             => [ 'gift_bitslice.ua',      '-B' ],
-    'Gimli-vs'            => [ 'gimli.ua',              '-V' ],
-    'Gimli-bs'            => [ 'gimli_bitslice.ua',     '-B -unroll -inline-all' ],
-    'Photon-bs'           => [ 'photon_bitslice.ua',    '-B', '-no-sched' ],
-    'Present'             => [ 'present.ua',            '-B' ],
-    'Pyjamask-vs'         => [ 'pyjamask_vslice.ua',    '-V' ],
-    'Pyjamask-bs'         => [ 'pyjamask_bitslice.ua',  '-B' ],
-    'Rectangle-vs'        => [ 'rectangle.ua',          '-V' ],
-    'Rectangle-vs-inter'  => [ 'rectangle.ua',          '-V', '-interleave 2' ],
-    'Rectangle-hs'        => [ 'rectangle.ua',          '-H' ],
-    'Rectangle-hs-inter'  => [ 'rectangle.ua',          '-H', '-interleave 2' ],
-    'Rectangle-bs'        => [ 'rectangle_bitslice.ua', '-B' ],
-    'Serpent'             => [ 'serpent.ua',            '-V' ],
-    'Serpent-inter'       => [ 'serpent.ua',            '-V', '-interleave 2' ],
-    'Skinny-bs'           => [ 'skinny_bitslice.ua',    '-B' ],
-    'Spongent'            => [ 'spongent.ua',           '-B' ],
-    'Subterranean'        => [ 'subterranean.ua',       '-B' ],
-    'Xoodoo-bs'           => [ 'xoodoo.ua',             '-B' ],
-    'Xoodoo-vs'           => [ 'xoodoo.ua',             '-V' ],
+    'ACE-bs'              => [ 'ace_bitslice.ua',       '-B', '-unroll', '-inline-all' ],
+    'AES-bs'              => [ 'aes.ua',                '-B', '-unroll', '-inline-all' ],
+    'AES-hs'              => [ 'aes_mslice.ua',         '-H', '-unroll', '-inline-all' ],
+    'AES-vs'              => [ 'aes_generic.ua',        '-V', '-unroll', '-inline-all' ],
+    'Ascon-vs-inter'      => [ 'ascon.ua',              '-V', '-unroll', '-inline-all' ],
+    'Gimli-bs'            => [ 'gimli_bitslice.ua',     '-B', '-unroll', '-inline-all' ],
+    'Photon-bs'           => [ 'photon_bitslice.ua',    '-B', '-unroll', '-inline-all' ],
+    'Rectangle-hs-inter'  => [ 'rectangle.ua',          '-H', '-unroll', '-inline-all' ],
     );
 my $nb_run = 35;
 
@@ -132,21 +101,6 @@ if ($set_ref) {
     $gen     = 1;
     $compile = 0;
     $run     = 0;
-    $quick   = 0;
-}
-
-if ($quick) {
-  #  Benchmark only core set of algorithms
-    %ciphers = (
-        'AES-bs'              => [ 'aes.ua',                '-B', '-unroll', '-inline-all' ],
-        'AES-hs'              => [ 'aes_mslice.ua',         '-H', '-unroll', '-inline-all' ],
-        'AES-vs'              => [ 'aes_generic.ua',        '-V', '-unroll', '-inline-all' ],
-        'ACE-vs-inter'        => [ 'ace.ua',                '-V', '-unroll', '-inline-all' ],
-        'Ascon-vs-inter'      => [ 'ascon.ua',              '-V', '-unroll', '-inline-all' ],
-        'Gimli-bs'            => [ 'gimli_bitslice.ua',     '-B', '-unroll', '-inline-all' ],
-        'Photon-bs'           => [ 'photon_bitslice.ua',    '-B', '-unroll', '-inline-all' ],
-        'Rectangle-hs-inter'  => [ 'rectangle.ua',          '-H', '-unroll', '-inline-all' ],
-        );
 }
 
 my $pm = Parallel::ForkManager->new($thread_count);
