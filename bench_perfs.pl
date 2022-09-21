@@ -138,14 +138,14 @@ if ($set_ref) {
 if ($quick) {
   #  Benchmark only core set of algorithms
     %ciphers = (
-        'AES-bs'              => [ 'aes.ua',                '-B' ],
-        'AES-hs'              => [ 'aes_mslice.ua',         '-H' ],
-        'AES-vs'              => [ 'aes_generic.ua',        '-V' ],
-        'ACE-vs-inter'        => [ 'ace.ua',                '-V', '-interleave 2' ],
-        'Ascon-vs-inter'      => [ 'ascon.ua',              '-V', '-interleave 2' ],
-        'Gimli-bs'            => [ 'gimli_bitslice.ua',     '-B -unroll -inline-all' ],
-        'Photon-bs'           => [ 'photon_bitslice.ua',    '-B', '-no-sched' ],
-        'Rectangle-hs-inter'  => [ 'rectangle.ua',          '-H', '-interleave 2' ]
+        'AES-bs'              => [ 'aes.ua',                '-B', '-unroll', '-inline-all' ],
+        'AES-hs'              => [ 'aes_mslice.ua',         '-H', '-unroll', '-inline-all' ],
+        'AES-vs'              => [ 'aes_generic.ua',        '-V', '-unroll', '-inline-all' ],
+        'ACE-vs-inter'        => [ 'ace.ua',                '-V', '-unroll', '-inline-all' ],
+        'Ascon-vs-inter'      => [ 'ascon.ua',              '-V', '-unroll', '-inline-all' ],
+        'Gimli-bs'            => [ 'gimli_bitslice.ua',     '-B', '-unroll', '-inline-all' ],
+        'Photon-bs'           => [ 'photon_bitslice.ua',    '-B', '-unroll', '-inline-all' ],
+        'Rectangle-hs-inter'  => [ 'rectangle.ua',          '-H', '-unroll', '-inline-all' ],
         );
 }
 
